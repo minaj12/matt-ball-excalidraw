@@ -128,7 +128,11 @@ const getCodeLanguageExtension = (language: string): Extension => {
         return "comment";
       }
       if (stream.eatSpace()) return null;
-      if (stream.match("//") || (normalized !== "html" && stream.match("#"))) {
+      if (
+        stream.match("//") ||
+        ((normalized === "python" || normalized === "bash") && stream.match("#")) ||
+        (normalized === "sql" && stream.match("--"))
+      ) {
         stream.skipToEnd();
         return "comment";
       }
