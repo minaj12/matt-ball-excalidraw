@@ -3,12 +3,15 @@ import { useState } from "react";
 
 import { KEYS } from "@excalidraw/common";
 import { CaptureUpdateAction, newElement } from "@excalidraw/element";
+import { CaptureUpdateAction, newElement } from "@excalidraw/element";
 
 import { useTunnels } from "../context/tunnels";
 import { t } from "../i18n";
 
 import { useEditorInterface, useStylesPanelMode } from "./App";
 import { HintViewer } from "./HintViewer";
+import { Dialog } from "./Dialog";
+import CodeMirrorEditor from "./TTDDialog/CodeMirrorEditor";
 import { Island } from "./Island";
 import { LockButton } from "./LockButton";
 import { PenModeButton } from "./PenModeButton";
@@ -61,6 +64,25 @@ const ExtraToolsDropdown = ({
   setAppState: React.Component<any, AppState>["setState"];
 }) => {
   const [isExtraToolsMenuOpen, setIsExtraToolsMenuOpen] = useState(false);
+  const [codeBlockDraft, setCodeBlockDraft] = useState<{
+    isOpen: boolean;
+    elementId: string | null;
+    title: string;
+    language: string;
+    code: string;
+  }>({
+    isOpen: false,
+    elementId: null,
+    title: "Example",
+    language: "javascript",
+    code: "console.log(\"Hello, world!\");",
+  });
+  const selectedCodeBlocks = app.scene.getNonDeletedElements().filter(
+    (element) =>
+      app.state.selectedElementIds[element.id] &&
+      element.type === "rectangle" &&
+      element.customData?.codeBlock,
+  );
   const isFullStylesPanel = useStylesPanelMode() === "full";
   const { TTDDialogTriggerTunnel } = useTunnels();
 
@@ -178,72 +200,31 @@ const ExtraToolsDropdown = ({
           Code
         </div>
         <DropdownMenu.Item
-          onSelect={() => {
-            const title = window.prompt("Code block title", "Example");
-            if (title === null) return;
-            const language = window.prompt(
-              "Language (javascript, typescript, python, c, cpp, java, html, css, json, sql, bash)",
-              "javascript",
-            );
-            if (language === null) return;
-            const code = window.prompt("Paste your code", "console.log('Hello, world!');");
-            if (code === null) return;
-            const zoom = app.state.zoom.value;
-            const element = newElement({
-              type: "rectangle",
-              x: app.state.width / (2 * zoom) - app.state.scrollX - 260,
-              y: app.state.height / (2 * zoom) - app.state.scrollY - 150,
-              width: 520,
-              height: 300,
-              strokeColor: "#64748b",
-              backgroundColor: "#111827",
-              fillStyle: "solid",
-              roughness: 0,
-              customData: {
-                codeBlock: {
-                  title: title || "Code",
-                  language: (language || "javascript").toLowerCase(),
-                  code,
-                },
-              },
-            });
-            app.updateScene({
-              elements: [...app.scene.getElementsIncludingDeleted(), element],
-              captureUpdate: CaptureUpdateAction.IMMEDIATELY,
-            });
-            setAppState({ selectedElementIds: { [element.id]: true } });
-          }}
+          onSelect={() =>
+            setCodeBlockDraft({
+              isOpen: true,
+              elementId: null,
+              title: "Example",
+              language: "javascript",
+              code: "console.log(\"Hello, world!\");",
+            })
+          }
           data-testid="toolbar-add-code-block"
         >
           Add code block
         </DropdownMenu.Item>
         <DropdownMenu.Item
+          disabled={selectedCodeBlocks.length !== 1}
           onSelect={() => {
-            const selected = app.scene.getNonDeletedElements().filter(
-              (element) => app.state.selectedElementIds[element.id] &&
-                element.type === "rectangle" && element.customData?.codeBlock,
-            );
-            if (selected.length !== 1) {
-              window.alert("Select one code block first.");
-              return;
-            }
-            const element = selected[0];
-            const current = element.customData?.codeBlock || {};
-            const title = window.prompt("Code block title", current.title || "Code");
-            if (title === null) return;
-            const language = window.prompt("Language", current.language || "javascript");
-            if (language === null) return;
-            const code = window.prompt("Code", current.code || "");
-            if (code === null) return;
-            app.mutateElement(element, {
-              customData: {
-                ...element.customData,
-                codeBlock: {
-                  title: title || "Code",
-                  language: (language || "javascript").toLowerCase(),
-                  code,
-                },
-              },
+            const element = selectedCodeBlocks[0];
+            if (!element || element.type !== "rectangle") return;
+            const data = element.customData?.codeBlock || {};
+            setCodeBlockDraft({
+              isOpen: true,
+              elementId: element.id,
+              title: data.title || "Code",
+              language: data.language || "javascript",
+              code: data.code || "",
             });
           }}
           data-testid="toolbar-edit-code-block"
@@ -274,6 +255,146 @@ const ExtraToolsDropdown = ({
         )}
       </DropdownMenu.Content>
     </DropdownMenu>
+    {codeBlockDraft.isOpen && (
+      <Dialog
+        className="code-block-dialog"
+        size="wide"
+        title="Code block"
+        onCloseRequest={() =>
+          setCodeBlockDraft((draft) => ({ ...draft, isOpen: false }))
+        }
+        autofocus={false}
+      >
+        <div className="code-block-dialog__body">
+          <div className="code-block-dialog__fields">
+            <label className="code-block-dialog__field">
+              <span>Title</span>
+              <input
+                type="text"
+                value={codeBlockDraft.title}
+                maxLength={80}
+                onChange={(event) =>
+                  setCodeBlockDraft((draft) => ({
+                    ...draft,
+                    title: event.target.value,
+                  }))
+                }
+                placeholder="Code block title"
+              />
+            </label>
+            <label className="code-block-dialog__field">
+              <span>Language</span>
+              <select
+                value={codeBlockDraft.language}
+                onChange={(event) =>
+                  setCodeBlockDraft((draft) => ({
+                    ...draft,
+                    language: event.target.value,
+                  }))
+                }
+              >
+                {[
+                  "javascript",
+                  "typescript",
+                  "python",
+                  "c",
+                  "cpp",
+                  "java",
+                  "html",
+                  "css",
+                  "json",
+                  "sql",
+                  "bash",
+                ].map((language) => (
+                  <option key={language} value={language}>
+                    {language.toUpperCase()}
+                  </option>
+                ))}
+              </select>
+            </label>
+          </div>
+          <div className="code-block-dialog__editor">
+            <CodeMirrorEditor
+              value={codeBlockDraft.code}
+              onChange={(code) =>
+                setCodeBlockDraft((draft) => ({ ...draft, code }))
+              }
+              language={codeBlockDraft.language}
+              theme={app.state.theme}
+              placeholder="Write or paste your code here…"
+            />
+          </div>
+          <div className="code-block-dialog__actions">
+            <button
+              type="button"
+              className="excalidraw-button"
+              onClick={() =>
+                setCodeBlockDraft((draft) => ({ ...draft, isOpen: false }))
+              }
+            >
+              Cancel
+            </button>
+            <button
+              type="button"
+              className="excalidraw-button"
+              onClick={() => {
+                const data = {
+                  title: codeBlockDraft.title.trim() || "Code",
+                  language: codeBlockDraft.language,
+                  code: codeBlockDraft.code,
+                };
+                if (codeBlockDraft.elementId) {
+                  const element = app.scene
+                    .getNonDeletedElements()
+                    .find((candidate) => candidate.id === codeBlockDraft.elementId);
+                  if (element && element.type === "rectangle") {
+                    app.mutateElement(element, {
+                      customData: {
+                        ...element.customData,
+                        codeBlock: data,
+                      },
+                    });
+                  }
+                } else {
+                  const zoom = app.state.zoom.value;
+                  const element = newElement({
+                    type: "rectangle",
+                    x:
+                      app.state.width / (2 * zoom) -
+                      app.state.scrollX -
+                      260,
+                    y:
+                      app.state.height / (2 * zoom) -
+                      app.state.scrollY -
+                      150,
+                    width: 520,
+                    height: 300,
+                    strokeColor: "#64748b",
+                    backgroundColor: "#111827",
+                    fillStyle: "solid",
+                    roughness: 0,
+                    customData: { codeBlock: data },
+                  });
+                  app.updateScene({
+                    elements: [
+                      ...app.scene.getElementsIncludingDeleted(),
+                      element,
+                    ],
+                    captureUpdate: CaptureUpdateAction.IMMEDIATELY,
+                  });
+                  setAppState({
+                    selectedElementIds: { [element.id]: true },
+                  });
+                }
+                setCodeBlockDraft((draft) => ({ ...draft, isOpen: false }));
+              }}
+            >
+              Save code block
+            </button>
+          </div>
+        </div>
+      </Dialog>
+    )}
   );
 };
 
