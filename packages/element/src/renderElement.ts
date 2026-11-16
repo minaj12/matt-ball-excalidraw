@@ -65,6 +65,7 @@ import {
 } from "./typeChecks";
 import { getContainingFrame } from "./frame";
 import { getCornerRadius } from "./utils";
+import { renderCodeBlock } from "./codeBlock";
 
 import { ShapeCache } from "./shape";
 
@@ -331,6 +332,7 @@ const drawElementOnCanvas = (
       context.lineCap = "round";
 
       rc.draw(ShapeCache.generateElementShape(element, renderConfig));
+      renderCodeBlock(element, context);
       break;
     }
     case "arrow":
