@@ -3,7 +3,6 @@ import { useState } from "react";
 
 import { KEYS } from "@excalidraw/common";
 import { CaptureUpdateAction, newElement } from "@excalidraw/element";
-import { CaptureUpdateAction, newElement } from "@excalidraw/element";
 
 import { useTunnels } from "../context/tunnels";
 import { t } from "../i18n";
@@ -12,6 +11,7 @@ import { useEditorInterface, useStylesPanelMode } from "./App";
 import { HintViewer } from "./HintViewer";
 import { Dialog } from "./Dialog";
 import CodeMirrorEditor from "./TTDDialog/CodeMirrorEditor";
+import "./CodeBlockDialog.scss";
 import { Island } from "./Island";
 import { LockButton } from "./LockButton";
 import { PenModeButton } from "./PenModeButton";
