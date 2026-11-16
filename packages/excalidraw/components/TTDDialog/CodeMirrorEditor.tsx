@@ -14,7 +14,11 @@ import {
   historyKeymap,
   redo,
 } from "@codemirror/commands";
-import { syntaxHighlighting, HighlightStyle } from "@codemirror/language";
+import {
+  syntaxHighlighting,
+  HighlightStyle,
+  StreamLanguage,
+} from "@codemirror/language";
 import { tags } from "@lezer/highlight";
 
 import type { Theme } from "@excalidraw/element/types";
