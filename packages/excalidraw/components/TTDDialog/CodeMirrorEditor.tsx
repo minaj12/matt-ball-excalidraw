@@ -11,6 +11,7 @@ import { Compartment, EditorState, type Extension } from "@codemirror/state";
 import {
   defaultKeymap,
   history,
+  indentWithTab,
   historyKeymap,
   redo,
 } from "@codemirror/commands";
@@ -122,7 +123,7 @@ const getCodeLanguageExtension = (language: string): Extension => {
     startState: () => ({ inBlockComment: false }),
     token(stream, state) {
       if (state.inBlockComment) {
-        if (stream.match(/.*?\\*\\//)) state.inBlockComment = false;
+        if (stream.match(/.*?\*\//)) state.inBlockComment = false;
         else stream.skipToEnd();
         return "comment";
       }
@@ -235,6 +236,7 @@ const CodeMirrorEditor = ({
             }
           }),
           history(),
+          keymap.of([indentWithTab]),
           keymap.of([...defaultKeymap, ...historyKeymap]),
           lineNumbers(),
           EditorView.lineWrapping,
