@@ -97,7 +97,8 @@ const ExtraToolsDropdown = ({
   const embeddableToolSelected = activeTool.type === "embeddable";
 
   return (
-    <DropdownMenu open={isExtraToolsMenuOpen}>
+    <>
+      <DropdownMenu open={isExtraToolsMenuOpen}>
       <DropdownMenu.Trigger
         className={clsx("App-toolbar__extra-tools-trigger", {
           "App-toolbar__extra-tools-trigger--selected":
@@ -264,6 +265,7 @@ const ExtraToolsDropdown = ({
           setCodeBlockDraft((draft) => ({ ...draft, isOpen: false }))
         }
         autofocus={false}
+        closeOnClickOutside={false}
       >
         <div className="code-block-dialog__body">
           <div className="code-block-dialog__fields">
@@ -394,7 +396,8 @@ const ExtraToolsDropdown = ({
           </div>
         </div>
       </Dialog>
-    )}
+      )}
+    </>
   );
 };
 
