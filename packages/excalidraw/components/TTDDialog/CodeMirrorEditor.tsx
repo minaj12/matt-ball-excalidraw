@@ -130,7 +130,8 @@ const getCodeLanguageExtension = (language: string): Extension => {
       if (stream.eatSpace()) return null;
       if (
         stream.match("//") ||
-        ((normalized === "python" || normalized === "bash") && stream.match("#")) ||
+        ((normalized === "python" || normalized === "bash") &&
+          stream.match("#")) ||
         (normalized === "sql" && stream.match("--"))
       ) {
         stream.skipToEnd();
@@ -146,19 +147,28 @@ const getCodeLanguageExtension = (language: string): Extension => {
         }
         return "comment";
       }
-      if (stream.match(/"(?:\\\\.|[^"\\\\])*"?/) || stream.match(/'(?:\\\\.|[^'\\\\])*'?/) || (normalized === "javascript" || normalized === "typescript") && stream.match(/`(?:\\\\.|[^`\\\\])*`/)) {
+      if (
+        stream.match(/"(?:\\.|[^"\\])*"?/) ||
+        stream.match(/'(?:\\.|[^'\\])*'?/)
+      ) {
         return "string";
       }
-      if (stream.match(/\\b\\d+(?:\\.\\d+)?\\b/)) return "number";
-      if (normalized === "html" && stream.match(/<\\/?[A-Za-z][\\w-]*/)) return "tagName";
-      if (normalized === "html" && stream.match(/[A-Za-z-]+(?=\\s*=)/)) return "attributeName";
-      if (stream.match(/[A-Za-z_$][\\w$]*/)) {
+      if (stream.match(/\b\d+(?:\.\d+)?\b/)) return "number";
+      if (normalized === "html" && stream.match(/<\/?[A-Za-z][\w-]*/)) {
+        return "tagName";
+      }
+      if (normalized === "html" && stream.match(/[A-Za-z-]+(?=\s*=)/)) {
+        return "attributeName";
+      }
+      if (stream.match(/[A-Za-z_$][\w$]*/)) {
         const word = stream.current();
-        if (keywords.has(word) || keywords.has(word.toUpperCase())) return "keyword";
+        if (keywords.has(word) || keywords.has(word.toUpperCase())) {
+          return "keyword";
+        }
         if (/^[A-Z]/.test(word)) return "typeName";
         return normalized === "json" ? "propertyName" : "variableName";
       }
-      if (stream.match(/[{}()[\\].,;:]/)) return "punctuation";
+      if (stream.match(/[{}()[\].,;:]/)) return "punctuation";
       if (stream.match(/[+*%!=<>|&^~/?-]+/)) return "operator";
       stream.next();
       return null;
